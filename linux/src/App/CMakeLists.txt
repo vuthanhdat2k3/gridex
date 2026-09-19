@@ -1,5 +1,6 @@
 add_library(gridex-app STATIC
     DependencyInjection/DIContainer.cpp
+    Headless/ConnectionSeeder.cpp
     MCP/MCPConnectionProvider.cpp
 )
 

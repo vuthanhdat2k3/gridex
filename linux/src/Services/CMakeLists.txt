@@ -26,6 +26,7 @@ add_library(gridex-services STATIC
     MCP/Security/ApprovalGate.cpp
     MCP/Security/RowCountEstimator.cpp
     MCP/Transport/StdioTransport.cpp
+    MCP/Transport/HttpTransport.cpp
     MCP/Tools/ToolRegistry.cpp
     MCP/Tools/Tier1/ListConnectionsTool.cpp
     MCP/Tools/Tier1/ListTablesTool.cpp

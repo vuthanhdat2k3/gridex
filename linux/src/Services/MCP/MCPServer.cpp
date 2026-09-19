@@ -150,7 +150,11 @@ JSONRPCResponse MCPServer::handleToolCall(const JSONRPCRequest& req) {
     MCPAuditClient clientAudit;
     clientAudit.name      = info.name;
     clientAudit.version   = info.version;
-    clientAudit.transport = (mode_ == MCPTransportMode::Stdio) ? "stdio" : "in-process";
+    switch (mode_) {
+        case MCPTransportMode::Stdio:    clientAudit.transport = "stdio";      break;
+        case MCPTransportMode::HttpOnly: clientAudit.transport = "http";       break;
+        case MCPTransportMode::InProcess: clientAudit.transport = "in-process"; break;
+    }
 
     std::optional<std::string> connIdOpt;
     std::optional<std::string> connTypeOpt;

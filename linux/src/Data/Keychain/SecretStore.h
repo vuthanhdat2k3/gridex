@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -10,6 +12,12 @@ namespace gridex {
 // Keys are scoped by service name "com.gridex.credentials". The store delegates
 // to the Secret Service daemon (GNOME Keyring / KWallet). If no daemon is
 // available (e.g. headless/WSL) operations throw gridex::GridexError.
+//
+// Headless fallback: when the environment variable GRIDEX_SECRET_STORE is set
+// to "file:<path>", secrets are kept in a JSON file at <path> (created with
+// owner-only permissions) instead of talking to the Secret Service daemon.
+// This allows the MCP stdio/HTTP servers to run inside containers with no
+// keyring daemon. The rest of the API is unchanged.
 class SecretStore {
 public:
     SecretStore();
@@ -65,7 +73,19 @@ public:
     }
 
 private:
-    std::string serviceName_;
+    enum class Backend {
+        SecretService,
+        File,
+    };
+
+    // File backend helpers (used when backend_ == Backend::File).
+    void fileLoadAll(std::map<std::string, std::string>& out) const;
+    void fileStoreAll(const std::map<std::string, std::string>& data) const;
+
+    Backend backend_ = Backend::SecretService;
+    std::string filePath_;       // file backend: JSON secrets file
+    std::string serviceName_;    // secret-service backend: schema service name
+    mutable std::mutex mu_;
 };
 
 }
