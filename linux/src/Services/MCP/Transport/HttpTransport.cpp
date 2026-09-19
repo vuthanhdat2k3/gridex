@@ -219,7 +219,7 @@ void HttpTransport::processBuffered(QTcpSocket* socket) {
 bool HttpTransport::authorized(const HttpRequest& req) const {
     if (authToken_.empty()) return true;
     const auto it = req.headers.find("authorization");
-    return it != req.headers.end() && *it == "Bearer " + authToken_;
+    return it != req.headers.end() && it->second == "Bearer " + authToken_;
 }
 
 bool HttpTransport::dispatch(QTcpSocket* socket, const HttpRequest& req) {
@@ -342,7 +342,7 @@ bool HttpTransport::handleMcpPost(QTcpSocket* socket, const HttpRequest& req) {
     }
 
     std::string sessionId;
-    if (const auto sit = req.headers.find("mcp-session-id"); sit != req.headers.end()) sessionId = *sit;
+    if (const auto sit = req.headers.find("mcp-session-id"); sit != req.headers.end()) sessionId = sit->second;
 
     // Batched JSON-RPC (array) — process each entry, return the responses.
     if (parsed.is_array()) {
@@ -403,7 +403,7 @@ bool HttpTransport::handleMcpGet(QTcpSocket* socket, const HttpRequest& req) {
 
 bool HttpTransport::handleMcpDelete(QTcpSocket* socket, const HttpRequest& req) {
     if (const auto sit = req.headers.find("mcp-session-id"); sit != req.headers.end()) {
-        httpSessions_.erase(*sit);
+        httpSessions_.erase(sit->second);
     }
     respondSimple(socket, 200, statusText(200), req.keepAlive);
     return true;
