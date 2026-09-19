@@ -68,13 +68,13 @@ private:
         std::string target;                                     // raw path?query
         std::string path;                                       // path without query
         std::string query;                                      // raw query string (no '?')
+        std::string version;                                    // e.g. HTTP/1.1
         std::map<std::string, std::string> headers;             // lower-cased keys
         QByteArray body;
         bool keepAlive = true;
     };
 
     void onNewConnection();
-    void onSocketDisconnected();
     void onReadyRead(QTcpSocket* socket);
     void processBuffered(QTcpSocket* socket);
     bool dispatch(QTcpSocket* socket, const HttpRequest& req);
