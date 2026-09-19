@@ -44,12 +44,16 @@ std::string normalizeDbType(const std::string& raw) {
 std::vector<ConnectionSeeder::SeededConnection> ConnectionSeeder::seedFromFile(
     const std::string& path, AppConnectionRepository& repo, SecretStore& secrets) {
     const nlohmann::json root = readFile(path);
-    if (!root.is_array()) throw SerializationError("ConnectionSeeder: root must be a JSON array of connections");
+    // Accept either a single connection object or an array of them.
+    nlohmann::json entries = root.is_array()
+                                 ? root
+                                 : nlohmann::json::array({root});
+    if (!entries.is_array()) throw SerializationError("ConnectionSeeder: root must be a JSON object or array");
 
     std::vector<SeededConnection> seeded;
-    seeded.reserve(root.size());
+    seeded.reserve(entries.size());
 
-    for (const auto& entry : root) {
+    for (const auto& entry : entries) {
         if (!entry.is_object()) throw SerializationError("ConnectionSeeder: each connection must be an object");
 
         const std::string id = requireString(entry, "id", "<missing>");
