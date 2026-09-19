@@ -6,7 +6,29 @@
 #include <QSettings>
 #include <QStyleHints>
 
+// Qt::ColorScheme / QStyleHints::colorSchemeChanged landed in Qt 6.5. Ubuntu
+// 24.04 ships Qt 6.4, so guard the system-theme detection and fall back to a
+// dark theme on older runtimes (GUI-only; headless MCP modes never hit this).
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+#define GRIDEX_HAS_COLORSCHEME 1
+#else
+#define GRIDEX_HAS_COLORSCHEME 0
+#endif
+
 namespace gridex {
+
+namespace {
+
+bool systemPrefersDark() {
+#if GRIDEX_HAS_COLORSCHEME
+    const Qt::ColorScheme s = QGuiApplication::styleHints()->colorScheme();
+    return (s == Qt::ColorScheme::Dark) || (s == Qt::ColorScheme::Unknown);
+#else
+    return true;  // Qt < 6.5: default to the dark palette
+#endif
+}
+
+}  // namespace
 
 ThemeManager& ThemeManager::instance() {
     static ThemeManager inst;
@@ -30,6 +52,7 @@ void ThemeManager::apply(QApplication* app) {
     if (useLegacy) {
         if (mode_ == Mode::Auto) {
             applyLegacyForSystem(app);
+#if GRIDEX_HAS_COLORSCHEME
             connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
                     this, [this](Qt::ColorScheme) {
                         if (mode_ == Mode::Auto && app_) {
@@ -37,6 +60,7 @@ void ThemeManager::apply(QApplication* app) {
                             emit themeChanged();
                         }
                     }, Qt::UniqueConnection);
+#endif
         } else {
             applyQss(app, mode_ == Mode::Light
                          ? QStringLiteral(":/style-light.qss")
@@ -47,6 +71,7 @@ void ThemeManager::apply(QApplication* app) {
 
     // gx skin — pick dark or light based on mode (Auto follows system).
     applyGxForMode(app);
+#if GRIDEX_HAS_COLORSCHEME
     if (mode_ == Mode::Auto) {
         connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
                 this, [this](Qt::ColorScheme) {
@@ -56,6 +81,7 @@ void ThemeManager::apply(QApplication* app) {
                     }
                 }, Qt::UniqueConnection);
     }
+#endif
 }
 
 void ThemeManager::applyGxForMode(QApplication* app) {
@@ -63,8 +89,7 @@ void ThemeManager::applyGxForMode(QApplication* app) {
     if (mode_ == Mode::Light) dark = false;
     else if (mode_ == Mode::Dark) dark = true;
     else {
-        const Qt::ColorScheme s = QGuiApplication::styleHints()->colorScheme();
-        dark = (s == Qt::ColorScheme::Dark) || (s == Qt::ColorScheme::Unknown);
+        dark = systemPrefersDark();
     }
     applyQss(app, dark ? QStringLiteral(":/style-gx.qss")
                        : QStringLiteral(":/style-gx-light.qss"));
@@ -91,8 +116,7 @@ ThemeManager::Mode ThemeManager::mode() const {
 bool ThemeManager::isDark() const {
     if (mode_ == Mode::Light) return false;
     if (mode_ == Mode::Dark)  return true;
-    const Qt::ColorScheme s = QGuiApplication::styleHints()->colorScheme();
-    return (s == Qt::ColorScheme::Dark) || (s == Qt::ColorScheme::Unknown);
+    return systemPrefersDark();
 }
 
 void ThemeManager::applyQss(QApplication* app, const QString& path) {
@@ -104,9 +128,7 @@ void ThemeManager::applyQss(QApplication* app, const QString& path) {
 }
 
 void ThemeManager::applyLegacyForSystem(QApplication* app) {
-    const Qt::ColorScheme scheme = QGuiApplication::styleHints()->colorScheme();
-    const bool dark = (scheme == Qt::ColorScheme::Dark)
-                   || (scheme == Qt::ColorScheme::Unknown);
+    const bool dark = systemPrefersDark();
     applyQss(app, dark ? QStringLiteral(":/style-dark.qss")
                        : QStringLiteral(":/style-light.qss"));
 }
