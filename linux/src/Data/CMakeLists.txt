@@ -18,7 +18,8 @@ include(FetchContent)
 find_package(bsoncxx CONFIG QUIET)
 find_package(mongocxx CONFIG QUIET)
 
-if(NOT TARGET mongocxx_shared AND NOT TARGET mongocxx_static)
+if(NOT TARGET mongocxx_shared AND NOT TARGET mongocxx_static
+   AND NOT TARGET mongocxx::mongocxx_shared AND NOT TARGET mongocxx::mongocxx_static)
     FetchContent_Declare(mongo-c-driver
         GIT_REPOSITORY https://github.com/mongodb/mongo-c-driver.git
         GIT_TAG        1.27.1
