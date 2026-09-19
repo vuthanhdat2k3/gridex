@@ -450,4 +450,8 @@ std::string HttpTransport::queryParam(const HttpRequest& req, const std::string&
     return "";
 }
 
+std::string HttpTransport::newSessionId() const {
+    return newUuid();
+}
+
 }  // namespace gridex::mcp
