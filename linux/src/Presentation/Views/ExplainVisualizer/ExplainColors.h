@@ -30,8 +30,12 @@ inline bool isDarkPalette() {
                                             QStringLiteral("Auto")).toString();
     if (saved == QLatin1String("Light")) return false;
     if (saved == QLatin1String("Dark"))  return true;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     const Qt::ColorScheme s = QGuiApplication::styleHints()->colorScheme();
     return (s == Qt::ColorScheme::Dark) || (s == Qt::ColorScheme::Unknown);
+#else
+    return true;  // Qt < 6.5 (Ubuntu 24.04): default to the dark palette
+#endif
 }
 
 // Saturated accent. Picked separately for light vs dark so the contrast
